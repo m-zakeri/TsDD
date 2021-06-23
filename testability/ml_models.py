@@ -12,27 +12,28 @@ __author__ = 'Morteza'
 import os
 import ntpath
 import math
-
-from sklearn.svm import NuSVR
 from sklearnex import patch_sklearn
-
 patch_sklearn()
 
 import pandas as pd
 import joblib
 from matplotlib import pyplot as plt
+
 from sklearn import preprocessing
+from sklearn.model_selection import train_test_split, ShuffleSplit, GridSearchCV
+
 from sklearn.experimental import enable_hist_gradient_boosting  # noqa
 from sklearn.ensemble import VotingRegressor, RandomForestRegressor, GradientBoostingRegressor, \
     HistGradientBoostingRegressor
 from sklearn.linear_model import SGDRegressor
-from sklearn.metrics import r2_score, explained_variance_score, mean_absolute_error, mean_squared_error, \
-    median_absolute_error, mean_squared_log_error, mean_poisson_deviance, max_error, mean_gamma_deviance
-from sklearn.model_selection import train_test_split, ShuffleSplit, GridSearchCV
 from sklearn.neural_network import MLPRegressor
 from sklearn.tree import DecisionTreeRegressor, plot_tree
+from sklearn.svm import NuSVR
+from sklearn.metrics import r2_score, explained_variance_score, mean_absolute_error, mean_squared_error, \
+    median_absolute_error, mean_squared_log_error, mean_poisson_deviance, max_error, mean_gamma_deviance
 
 from metrica.metrics_map import testability_metrics
+
 
 
 class Dataset:
