@@ -12,6 +12,12 @@ __author__ = 'Morteza'
 import os
 import ntpath
 import math
+
+from sklearn.svm import NuSVR
+from sklearnex import patch_sklearn
+
+patch_sklearn()
+
 import pandas as pd
 import joblib
 from matplotlib import pyplot as plt
@@ -79,8 +85,8 @@ class Dataset:
                             test_quality = (lc * br * mu) ** (1 / 3)
                             test_effort = 1
                             if row['TNM'] >= 1:
-                                omega = 6.0 / taw
-                                test_effort = (1 + omega) ** (math.ceil(taw/row['TNM'])-1)
+                                omega = 2.0 / taw
+                                test_effort = (1 + omega) ** (math.ceil((taw - 1) / row['TNM']))
                             testability_value = test_quality / test_effort
                         print(test_quality, test_effort, testability_value)
                         tsdd_testability_measure.append(testability_value)
@@ -99,22 +105,38 @@ class Dataset:
         for file_ in files:
             df = pd.read_csv(root_dir_path + file_, delimiter=',', index_col=False)
             df_all = df_all.append(df, ignore_index=True)
-        df_all.to_csv(r'../benchmark/SF110/dataset_final/all_with_label2.csv', index=False)
+        df_all.to_csv(r'../benchmark/SF110/dataset_final/all_with_label4.csv', index=False)
 
+    def compute_testability(self, lc, br, mu, taw, TNM):
+        if taw == 0:
+            test_quality = 0
+            test_effort = 0
+            testability_value = 0
+        else:
+            test_quality = (lc * br * mu) ** (1 / 3)
+            test_effort = 1
+            if TNM >= 1:
+                omega = 2.0 / taw
+                test_effort = (1 + omega) ** (math.ceil((taw - 1) / TNM))
+            testability_value = test_quality / test_effort
+        print('test effectiveness:', test_quality)
+        print('test effort:', test_effort)
+        print('testability:', testability_value)
+        return testability_value
 
     def clean_data(self):
-        df = pd.read_csv('../benchmark/SF110/dataset_final/all_with_label.csv',
+        df = pd.read_csv('../benchmark/SF110/dataset_final/all_with_label4.csv',
                          delimiter=',', index_col=False)
         counter = 0
         counter2 = 0
         for index, row in df.iterrows():
-            if row['LineCoverage'] * row['BranchCoverage'] * row['MutationScore'] == 0:
+            if row['LineCoverage'] * row['BranchCoverage'] == 0:
                 # print(row['LongName'])
                 df.drop(index, inplace=True)
                 counter += 1
 
         for index, row in df.iterrows():
-            if row['LOC'] < 10 or row['TestSuiteSize'] < 1:
+            if row['TestSuiteSize'] < 1 or row['LOC'] < 5:
                 df.drop(index, inplace=True)
                 counter2 += 1
 
@@ -122,7 +144,8 @@ class Dataset:
         print('counter2', counter2)
         print('all', counter + counter2)
         print(df.shape)
-        df.to_csv(r'../benchmark/SF110/dataset_final/all_with_label_cleaned.csv', index=False)
+        # df.drop(df.columns[[i for i in range(1,10)]], axis=1, inplace=True)
+        df.to_csv(r'../benchmark/SF110/dataset_final/all_with_label_cleaned4.csv', index=False)
 
 
 class Regression(object):
@@ -137,7 +160,7 @@ class Regression(object):
                                                                                   # self.df.iloc[:, -2],
                                                                                   self.df['TsDDTestability'],
                                                                                   test_size=0.20,
-                                                                                  random_state=42,
+                                                                                  random_state=13,
                                                                                   )
 
         """
@@ -254,61 +277,8 @@ class Regression(object):
 
         df.to_csv(model_path[:-7] + '_evaluation_metrics_R1.csv', index=True, index_label='Row')
 
-    def evaluate_model_class(self, model=None, model_path=None):
-        pass
-
-    def regress_with_decision_tree(self, model_path):
-        # X = self.data_frame.iloc[:, 1:-4]
-        # y = self.data_frame.iloc[:, -4]
-        # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.20, random_state=0)
-
-        clf = DecisionTreeRegressor()
-
-        # CrossValidation iterator object:
-        # https://scikit-learn.org/stable/tutorial/statistical_inference/model_selection.html
-        cv = ShuffleSplit(n_splits=5, test_size=0.25, random_state=42)
-
-        # Set the parameters to be used for tuning by cross-validation
-        parameters = {'max_depth': range(1, 100, 10),
-                      # 'criterion': ['mse', 'friedman_mse', 'mae'],
-                      'min_samples_split': range(2, 20, 1)
-                      }
-
-        # Set the objectives which must be optimized during parameter tuning
-        # scoring = ['r2', 'neg_mean_squared_error', 'neg_root_mean_squared_error', 'neg_mean_absolute_error',]
-        scoring = ['neg_root_mean_squared_error', ]
-
-        # Find the best model using gird-search with cross-validation
-        clf = GridSearchCV(clf, param_grid=parameters, scoring=scoring, cv=cv, n_jobs=4,
-                           refit='neg_root_mean_squared_error')
-        clf.fit(X=self.X_train, y=self.y_train)
-
-        print('Writing grid search result ...')
-        df = pd.DataFrame(clf.cv_results_, )
-        df.to_csv(model_path[:-7] + '_grid_search_cv_results.csv', index=False)
-        df = pd.DataFrame()
-        print('Best parameters set found on development set:', clf.best_params_)
-        df['best_parameters_development_set'] = [clf.best_params_]
-        print('Best classifier score on development set:', clf.best_score_)
-        df['best_score_development_set'] = [clf.best_score_]
-        print('best classifier score on test set:', clf.score(self.X_test, self.y_test))
-        df['best_score_test_set:'] = [clf.score(self.X_test, self.y_test)]
-        df.to_csv(model_path[:-7] + '_grid_search_cv_results_best.csv', index=False)
-
-        # Save and evaluate the best obtained model
-        print('Writing evaluation result ...')
-        clf = clf.best_estimator_
-        y_true, y_pred = self.y_test, clf.predict(self.X_test)
-        joblib.dump(clf, model_path)
-        self.evaluate_model(model=clf, model_path=model_path)
-
-        # Plots
-        plot_tree(clf, max_depth=3)
-        plt.show()
-
     def regress(self, model_path: str = None, model_number: int = None):
         """
-
         :param model_path:
         :param model_number: 1: DTR, 2: RFR, 3: GBR, 4: HGBR, 5: SGDR, 6: MLPR,
         :return:
@@ -324,10 +294,10 @@ class Regression(object):
         elif model_number == 2:
             regressor = RandomForestRegressor(random_state=42, )
             parameters = {
-                'n_estimators': range(100, 400, 200),
+                'n_estimators': range(100, 500, 100),
                 # 'criterion': ['mse', 'mae'],
                 'max_depth': range(3, 50, 5),
-                'min_samples_split': range(2, 30, 10),
+                'min_samples_split': range(2, 30, 5),
                 # 'max_features': ['auto', 'sqrt', 'log2']
             }
         elif model_number == 3:
@@ -335,14 +305,14 @@ class Regression(object):
             parameters = {
                 # 'loss': ['ls', 'lad', ],
                 'max_depth': range(3, 50, 5),
-                'min_samples_split': range(2, 30, 10)
+                'min_samples_split': range(2, 30, 5)
             }
         elif model_number == 4:
             regressor = HistGradientBoostingRegressor(max_iter=500, learning_rate=0.05, random_state=42, )
             parameters = {
                 # 'loss': ['least_squares', 'least_absolute_deviation'],
                 'max_depth': range(3, 50, 5),
-                'min_samples_leaf': range(2, 30, 10)
+                'min_samples_leaf': range(2, 30, 5)
             }
         elif model_number == 5:
             regressor = SGDRegressor(early_stopping=True, n_iter_no_change=5, random_state=42, )
@@ -351,8 +321,8 @@ class Regression(object):
                 'penalty': ['l2', 'l1', 'elasticnet'],
                 'max_iter': range(50, 500, 50),
                 'learning_rate': ['invscaling', 'optimal', 'constant', 'adaptive'],
-                'eta0': [0.1, 0.01],
-                'average': [32, ]
+                'eta0': [0.1, 0.01, 0.001],
+                'average': [32, 64]
             }
         elif model_number == 6:
             regressor = MLPRegressor(random_state=42, )
@@ -360,7 +330,15 @@ class Regression(object):
                 'hidden_layer_sizes': [(256, 100), (512, 256, 100)],
                 'activation': ['tanh', ],
                 'solver': ['adam', ],
-                'max_iter': range(50, 250, 100)
+                'max_iter': range(50, 250, 50)
+            }
+        elif model_number == 7:
+            regressor = NuSVR(cache_size=500, max_iter=- 1, shrinking=True)
+            parameters = {
+                'kernel': ['linear', 'rbf', 'poly', 'sigmoid', 'precomputed'],
+                'degree': [3, ],
+                'nu': [0.5, ],
+                'C': [1.0, ]
             }
 
         # Set the objectives which must be optimized during parameter tuning
@@ -368,9 +346,9 @@ class Regression(object):
         scoring = ['neg_root_mean_squared_error', ]
         # CrossValidation iterator object:
         # https://scikit-learn.org/stable/tutorial/statistical_inference/model_selection.html
-        cv = ShuffleSplit(n_splits=5, test_size=0.20, random_state=101)
+        cv = ShuffleSplit(n_splits=5, test_size=0.20, random_state=42)
         # Find the best model using gird-search with cross-validation
-        clf = GridSearchCV(regressor, param_grid=parameters, scoring=scoring, cv=cv, n_jobs=12,
+        clf = GridSearchCV(regressor, param_grid=parameters, scoring=scoring, cv=cv, n_jobs=18,
                            refit='neg_root_mean_squared_error')
         print('fitting model number', model_number)
         clf.fit(X=self.X_train, y=self.y_train)
@@ -409,15 +387,11 @@ class Regression(object):
                                 ('RFR1_DS{0}'.format(dataset_number), reg2),
                                 ('MLPR1_DS{0}'.format(dataset_number), reg3)
                                 ],
-                               weights=[3. / 6., 2. / 6., 1. / 6.])
+                               weights=[3. / 6., 2. / 6., 1. / 6.], n_jobs=18)
 
-        ereg.fit(self.X_train, self.y_train)
+        ereg.fit(self.X_train, self.y_train, )
         joblib.dump(ereg, model_path)
         self.evaluate_model(model=ereg, model_path=model_path)
-        # try:
-        #     self.evaluate_model_class(model=ereg, model_path=model_path)
-        # except:
-        #     print('Prediction is out of the range.')
 
     def determine_starts(self, project_raw_testability_score: float = None):
         TS_MAX = 0.995048905  # in our first version of reusability benchmark
@@ -460,20 +434,21 @@ class Regression(object):
 
 
 def train():
-    # DS1=all_with_label_cleaned
-    reg = Regression(df_path=r'../benchmark/SF110/dataset_final/all_with_label_cleaned.csv')
-    # reg.regress(model_path=r'models_profiles1/DTR1_DS1.joblib', model_number=1)
+    ds_path = r'../benchmark/SF110/dataset_final/all_with_label_cleaned4.csv'
+    reg = Regression(df_path=ds_path)
+
+    reg.regress(model_path=r'models_profiles1/DTR1_DS1.joblib', model_number=1)
     reg.regress(model_path=r'models_profiles1/RFR1_DS1.joblib', model_number=2)
     # reg.regress(model_path=r'models_profiles1/GBR1_DS1.joblib', model_number=3)
     reg.regress(model_path=r'models_profiles1/HGBR1_DS1.joblib', model_number=4)
-    # reg.regress(model_path=r'models_profiles1/SGDR_DS1.joblib', model_number=5)
+    reg.regress(model_path=r'models_profiles1/SGDR_DS1.joblib', model_number=5)
     reg.regress(model_path=r'models_profiles1/MLPR1_DS1.joblib', model_number=6)
-
+    reg.regress(model_path=r'models_profiles1/NuSVR1_DS1.joblib', model_number=7)
     reg.vote(model_path=r'models_profiles1/VoR1_DS1.joblib', dataset_number=1)
 
 
 def inference():
-    dataset_path = r'../benchmark/SF110/dataset_final/all_with_label_cleaned.csv'
+    dataset_path = r'../benchmark/SF110/dataset_final/all_with_label_cleaned4.csv'
 
     model_path = r'models_profiles1/DTR1_DS1.joblib'
 
@@ -495,10 +470,10 @@ def compute_benchmark_projects_testability(root_dir_path=None):
     projects_name = []
     for file_ in files:
         project_name = file_[:-4]
-        print('Computing reuesability for project {0}'.format(project_name))
+        print('Computing testability for project {0}'.format(project_name))
         df_current = pd.read_csv(root_dir_path + file_, delimiter=',', index_col=False)
-        project_testability = df_current['QualCodeTestability'].mean()
-        print('Project {0} reusability: {1}'.format(project_name, round(project_testability, 6)))
+        project_testability = df_current['TsDDTestability'].mean()
+        print('Project {0} testability: {1}'.format(project_name, round(project_testability, 6)))
         projects_testability_list.append(project_testability)
         projects_name.append(project_name)
 
@@ -517,10 +492,10 @@ def compute_benchmark_projects_testability(root_dir_path=None):
 
 # Main Driver
 if __name__ == '__main__':
-    ds = Dataset()
-    ds.add_evosuite_information()
-    ds.concatenate_csv_files()
+    # ds = Dataset()
+    # ds.add_evosuite_information()
+    # ds.concatenate_csv_files()
     # ds.clean_data()
-    # train()
+    train()
     # compute_benchmark_projects_testability(root_dir_path=r'../benchmark/SF110/dataset2/')
     # inference()  # with demo project for example
