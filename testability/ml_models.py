@@ -11,8 +11,10 @@ __author__ = 'Morteza'
 
 import os
 import ntpath
+import datetime as dt
 import math
 from sklearnex import patch_sklearn
+
 patch_sklearn()
 
 import pandas as pd
@@ -33,7 +35,6 @@ from sklearn.metrics import r2_score, explained_variance_score, mean_absolute_er
     median_absolute_error, mean_squared_log_error, mean_poisson_deviance, max_error, mean_gamma_deviance
 
 from metrica.metrics_map import testability_metrics
-
 
 
 class Dataset:
@@ -108,7 +109,8 @@ class Dataset:
             df_all = df_all.append(df, ignore_index=True)
         df_all.to_csv(r'../benchmark/SF110/dataset_final/all_with_label4.csv', index=False)
 
-    def compute_testability(self, lc, br, mu, taw, TNM):
+    @classmethod
+    def compute_testability(cls, lc, br, mu, taw, TNM):
         if taw == 0:
             test_quality = 0
             test_effort = 0
@@ -123,7 +125,7 @@ class Dataset:
         print('test effectiveness:', test_quality)
         print('test effort:', test_effort)
         print('testability:', testability_value)
-        return testability_value
+        # return testability_value
 
     def clean_data(self):
         df = pd.read_csv('../benchmark/SF110/dataset_final/all_with_label4.csv',
@@ -226,12 +228,12 @@ class Regression(object):
         X_test1 = df_features[cols]
         X_test = self.scaler.transform(X_test1)
         y_pred = model.predict(X_test)
-        df_features['PredictedTestability'] = list(y_pred)
-        print(df_features)
+        df_features['PredictedTsDDTestability'] = list(y_pred)
+        # print(df_features)
 
         df_features.to_csv(r'inference_results/' + self.path_leaf(features_path)[:-4] + '_predicted.csv',
                            index=True, index_label='Row')
-        project_testability = df_features['PredictedTestability'].mean()
+        project_testability = df_features['PredictedTsDDTestability'].mean()
         return project_testability
 
     def path_leaf(self, path):
@@ -336,7 +338,7 @@ class Regression(object):
         elif model_number == 7:
             regressor = NuSVR(cache_size=500, max_iter=- 1, shrinking=True)
             parameters = {
-                'kernel': ['linear', 'rbf', 'poly', 'sigmoid', 'precomputed'],
+                'kernel': ['linear', 'rbf', 'poly', 'sigmoid',],
                 'degree': [3, ],
                 'nu': [0.5, ],
                 'C': [1.0, ]
@@ -449,13 +451,16 @@ def train():
 
 
 def inference():
+    date_time = dt.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+    print('Start datetime {0}'.format(date_time))
+
     dataset_path = r'../benchmark/SF110/dataset_final/all_with_label_cleaned4.csv'
+    model_path = r'models_profiles1/VoR1_DS1.joblib'
 
-    model_path = r'models_profiles1/DTR1_DS1.joblib'
-
-    data_path = r'../benchmark/SF110/dataset/10_water-simulator-Class.csv'
-    data_path = r'../benchmark/SF110/dataset/107_weka-Class.csv'
+    # data_path = r'../benchmark/SF110/dataset/10_water-simulator-Class.csv'
+    # data_path = r'../benchmark/SF110/dataset/107_weka-Class.csv'
     # data_path = r'../benchmark/SF110/dataset/32_httpanalyzer-Class.csv'
+    data_path = r'../benchmark/SF110/data_to_inference/10_water-simulator-after-refactor3-Class.csv'
 
     reg = Regression(df_path=dataset_path)
     project_testability = reg.inference_model(model_path=model_path, features_path=data_path)
@@ -463,6 +468,8 @@ def inference():
     print('project_testability {}'.format(project_testability))
     print('project_testability stars rate {} ({})'.format(project_testability_star, '*' * project_testability_star))
 
+    date_time = dt.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+    print('End datetime {0}'.format(date_time))
 
 def compute_benchmark_projects_testability(root_dir_path=None):
     files = [f for f in os.listdir(root_dir_path) if os.path.isfile(os.path.join(root_dir_path, f))]
@@ -497,6 +504,8 @@ if __name__ == '__main__':
     # ds.add_evosuite_information()
     # ds.concatenate_csv_files()
     # ds.clean_data()
-    train()
+    # train()
+    # Dataset.compute_testability(lc=0.287671232876712, br=0.236051502145922, mu=0.175496688741721, taw=37, TNM=54)
+
     # compute_benchmark_projects_testability(root_dir_path=r'../benchmark/SF110/dataset2/')
-    # inference()  # with demo project for example
+    inference()  # with demo project for example
