@@ -102,6 +102,10 @@ def regress_with_decision_tree(model_path):
 
 
 def refactoring_importance():
+    """
+    https://support.minitab.com/en-us/minitab-express/1/help-and-how-to/modeling-statistics/regression/supporting-topics/basics/a-comparison-of-the-pearson-and-spearman-correlation-methods/
+    :return:
+    """
     xls = pd.ExcelFile(
         'D:/Users/Morteza/OneDrive/Online2/_04_2o/o2_university/PhD/Project21/a155_TsDD/experimental_results/refactoring_importance.xlsx')
     # df = pd.read_excel(xls, 'binary_for_learning')
@@ -126,7 +130,7 @@ def compare_source_code_metrics_before_and_after_refactoring():
     :return:
     """
     experiments_path = r'D:/Users/Morteza/OneDrive/Online2/_04_2o/o2_university/PhD/Project21/a155_TsDD/experimental_results/'
-    xls = pd.ExcelFile(experiments_path + r'source_code_metrics.xlsx')
+    xls = pd.ExcelFile(experiments_path + r'quality_metrics.xlsx')
     # df_gt = pd.read_excel(xls, 'binary_for_learning')
     df = pd.read_excel(xls, 'selected_classes_metrics')
 
@@ -144,7 +148,7 @@ def compare_source_code_metrics_before_and_after_refactoring():
                     col_wrap=5,
                     kind='box',
                     sharex=True, sharey=False, margin_titles=True,
-                    height=2.05, aspect=1.25, orient='v',
+                    height=2.075, aspect=1.25, orient='v',
                     legend_out=False, legend=False, dodge=True)
 
     g2 = sns.catplot(data=df3,
@@ -152,16 +156,17 @@ def compare_source_code_metrics_before_and_after_refactoring():
                      col_wrap=5,
                      kind='point',
                      sharex=True, sharey=False, margin_titles=True,
-                     height=2.055, aspect=1.25, orient='v',
+                     height=2.095, aspect=1.20, orient='v',
                      legend_out=False, legend=False, dodge=True,
                      # axes=g.axes
                      # palette=sns.color_palette('tab10', n_colors=4),
-                     markers=['o', 'X'], linestyles=['-', '--']
+                     markers=['*', 'o'], linestyles=['dotted', 'dashed']
                      )
     # g.set(yscale="log")
     g.despine(left=True)
     g2.despine(left=True)
-    plt.legend(loc='upper right')
+    g.axes[19].legend(loc='upper center')
+    g2.axes[19].legend(loc='upper center')
     plt.tight_layout()
     plt.show()
 
@@ -193,25 +198,74 @@ def compare_test_effectiveness_before_and_after_refactoring():
         for hatch, patch in zip(hatches, g.axes[i].artists):
             patch.set_hatch(hatch)
 
-    # g2 = sns.catplot(data=df2,
-    #                  x='Project', y='Value', hue='Stage', col='Criterion',
-    #                  col_wrap=5,
-    #                  kind='point',
-    #                  sharex=True, sharey=False, margin_titles=True,
-    #                  height=2.55, aspect=1.30, orient='v',
-    #                  legend_out=False, legend=False, dodge=True,
-    #                  # axes=g.axes
-    #                  # palette=sns.color_palette('tab10', n_colors=4),
-    #                  markers=['o', 'X'], linestyles=['-', '--']
-    #                  )
+    g2 = sns.catplot(data=df2,
+                     x='Project', y='Value', hue='Stage', col='Criterion',
+                     col_wrap=5,
+                     kind='point',
+                     sharex=True, sharey=False, margin_titles=True,
+                     height=2.55, aspect=1.30, orient='v',
+                     legend_out=False, legend=False, dodge=True,
+                     # axes=g.axes
+                     # palette=sns.color_palette('tab10', n_colors=4),
+                     markers=['o', 'X'], linestyles=['-', '--']
+                     )
     g.despine(left=True)
-    # g2.despine(left=True)
+    g2.despine(left=True)
     # plt.legend(loc='upper center')
+    g2.axes[4].legend(loc='upper center')
     g.axes[4].legend(loc='upper center')
     plt.tight_layout()
     plt.show()
 
+
+def compute_test_effectiveness():
+    experiments_path = r'D:/Users/Morteza/OneDrive/Online2/_04_2o/o2_university/PhD/Project21/a155_TsDD/experimental_results/'
+    xls = pd.ExcelFile(experiments_path + r'tsdd.xlsx')
+    # df_gt = pd.read_excel(xls, 'binary_for_learning')
+    df = pd.read_excel(xls, 'test_effectiveness')
+
+    df2 = df.loc[(df['Project'] == 'Weka') & (df['Stage'] == 'Before refactoring')]
+    df3 = df.loc[(df['Project'] == 'Weka') & (df['Stage'] == 'After refactoring')]
+    print(df3['Mutation coverage'].mean() - df2['Mutation coverage'].mean())
+
+    # Result:
+    # (Weka: 0.15692766596007457 + Scijava-common: 0.3277139182660322 + Free-mind: 0.07963432209427038)
+
+def draw_qmood():
+    experiments_path = r'D:/Users/Morteza/OneDrive/Online2/_04_2o/o2_university/PhD/Project21/a155_TsDD/experimental_results/'
+    xls = pd.ExcelFile(experiments_path + r'quality_metrics.xlsx')
+    df = pd.read_excel(xls, 'qmood-seaborn')
+    df.drop(columns=['Flexibility', 'Understandability',], inplace=True)
+    df2 = df.melt(id_vars=['Project',], var_name='Quality attribute', value_name='Improvement')
+
+    g = sns.catplot(data=df2,
+                     x='Project', y='Improvement', col='Quality attribute',
+                     kind='bar',
+                     sharex=True, sharey=False, margin_titles=True,
+                     height=3, aspect=1.10, orient='v',
+                     legend_out=False, legend=True, dodge=True,
+                     palette=sns.color_palette('tab10', n_colors=3),
+                     )
+    # Define some hatches
+    hatches = ['/', '\\', '//',]
+
+    # Loop over the bars
+    for j in range(0, 5):
+        for i, thisbar in enumerate(g.axes[0,j].patches):
+            # Set a different hatch for each bar
+            thisbar.set_hatch(hatches[i])
+            thisbar.set_width(0.35)
+
+    g.despine(left=True)
+    # plt.legend(loc='upper center')
+    # g.axes[0].legend(loc='upper center')
+    plt.tight_layout()
+    plt.show()
+
+
 # regress_with_decision_tree(model_path=r'refactoring_importance/DTR2_DSX2.joblib')
 # compare_source_code_metrics_before_and_after_refactoring()
-compare_test_effectiveness_before_and_after_refactoring()
+# compare_test_effectiveness_before_and_after_refactoring()
 # refactoring_importance()
+compute_test_effectiveness()
+# draw_qmood()
