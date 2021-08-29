@@ -152,15 +152,15 @@ def compare_source_code_metrics_before_and_after_refactoring():
                     legend_out=False, legend=False, dodge=True)
 
     g2 = sns.catplot(data=df3,
-                     x='Project', y='Value', hue='Stage', col='Metric',
+                     x='Stage', y='Value', hue='Project', col='Metric',
                      col_wrap=5,
                      kind='point',
                      sharex=True, sharey=False, margin_titles=True,
-                     height=2.095, aspect=1.20, orient='v',
+                     height=2.15, aspect=1.35, orient='v',
                      legend_out=False, legend=False, dodge=True,
                      # axes=g.axes
-                     # palette=sns.color_palette('tab10', n_colors=4),
-                     markers=['*', 'o'], linestyles=['dotted', 'dashed']
+                     palette=reversed(sns.color_palette('tab10', n_colors=3)),
+                     markers=['*', 'o', 'X'], linestyles=['dotted', 'dashed', '-.']
                      )
     # g.set(yscale="log")
     g.despine(left=True)
@@ -264,8 +264,8 @@ def draw_qmood():
 
 
 # regress_with_decision_tree(model_path=r'refactoring_importance/DTR2_DSX2.joblib')
-# compare_source_code_metrics_before_and_after_refactoring()
+compare_source_code_metrics_before_and_after_refactoring()
 # compare_test_effectiveness_before_and_after_refactoring()
 # refactoring_importance()
-compute_test_effectiveness()
+# compute_test_effectiveness()
 # draw_qmood()
