@@ -350,7 +350,7 @@ class Regression(object):
         # CrossValidation iterator object:
         # https://scikit-learn.org/stable/tutorial/statistical_inference/model_selection.html
         cv = ShuffleSplit(n_splits=5, test_size=0.20, random_state=42)
-        # Find the best model using gird-search with cross-validation
+        # Find the best model using grid-search with cross-validation
         clf = GridSearchCV(regressor, param_grid=parameters, scoring=scoring, cv=cv, n_jobs=18,
                            refit='neg_root_mean_squared_error')
         print('fitting model number', model_number)
