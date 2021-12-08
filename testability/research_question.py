@@ -6,8 +6,10 @@ TsDD paper.
 __version__ = '0.1.0'
 __author__ = 'Morteza Zakeri'
 
+import sys
+import os
 
-
+import numpy as np
 import pandas as pd
 import joblib
 from matplotlib import pyplot as plt
@@ -19,7 +21,7 @@ from sklearn.tree import plot_tree
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import ShuffleSplit, GridSearchCV
 
-from yellowbrick.model_selection import FeatureImportances
+# from yellowbrick.model_selection import FeatureImportances
 
 from metrica.metrics_map import testability_metrics
 
@@ -60,9 +62,9 @@ def regress_with_decision_tree(model_path):
     #                    refit='neg_root_mean_squared_error', )
     clf.fit(X=X_train, y=y_train)
 
-    viz = FeatureImportances(clf, labels=df_gt.columns[0:7], is_fitted=True)
-    viz.fit(X_train, y_train)
-    viz.show()
+    # viz = FeatureImportances(clf, labels=df_gt.columns[0:7], is_fitted=True)
+    # viz.fit(X_train, y_train)
+    # viz.show()
     quit()
 
     print('Writing grid search result ...')
@@ -231,6 +233,7 @@ def compute_test_effectiveness():
     # Result:
     # (Weka: 0.15692766596007457 + Scijava-common: 0.3277139182660322 + Free-mind: 0.07963432209427038)
 
+
 def draw_qmood():
     experiments_path = r'D:/Users/Morteza/OneDrive/Online2/_04_2o/o2_university/PhD/Project21/a155_TsDD/experimental_results/'
     xls = pd.ExcelFile(experiments_path + r'quality_metrics.xlsx')
@@ -263,9 +266,46 @@ def draw_qmood():
     plt.show()
 
 
+def merge_evosuite_reports(root_dir=r'E:/LSSDS/EvoSuite/TsDD_EvoSuite_Expr_JSON20201115/'):
+    execution_reports = []
+    for path, subdirs, files in os.walk(root_dir):
+        for name in files:
+            filename, file_extension = os.path.splitext(name)
+            if file_extension == '.csv':
+                print(os.path.join(path, name))
+                execution_reports.append(os.path.join(path, name))
+
+    df = pd.DataFrame()
+    for csv_path in execution_reports:
+        df1 = pd.read_csv(csv_path,)
+        df = df.append(df1, ignore_index=True)
+
+    df.to_csv(root_dir+'all_reports_JSON.csv', index=False)
+
+
+def visual_evosuite_reports(root_dir=r'E:/LSSDS/EvoSuite/TsDD_EvoSuite_Expr_JSON20201115/'):
+    df = pd.read_csv(root_dir+'all_reports_JSON.csv')
+
+    df = df[['TARGET_CLASS', 'ctg_time_per_class', 'LineCoverage', 'BranchCoverage', 'WeakMutationScore']]
+    df.rename(columns={'ctg_time_per_class': 'Test time per class (minute)'}, inplace=True)
+
+    print(df)
+    df = df.melt(id_vars=['TARGET_CLASS', 'Test time per class (minute)'], var_name='Criteria', value_name='Level' )
+
+    sns.lineplot(data=df, x='Test time per class (minute)', y='Level',
+                 hue='Criteria', style='Criteria',
+                 markers=True, estimator=np.nanmean, n_boot=10, sort=True,
+                 )
+
+    plt.tight_layout()
+    plt.show()
+
+
 # regress_with_decision_tree(model_path=r'refactoring_importance/DTR2_DSX2.joblib')
-compare_source_code_metrics_before_and_after_refactoring()
+# compare_source_code_metrics_before_and_after_refactoring()
 # compare_test_effectiveness_before_and_after_refactoring()
 # refactoring_importance()
 # compute_test_effectiveness()
 # draw_qmood()
+# merge_evosuite_reports()
+visual_evosuite_reports()
