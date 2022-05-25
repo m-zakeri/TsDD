@@ -10,6 +10,8 @@ import sys
 import os
 
 import numpy as np
+import scipy.stats
+from scipy.stats import ttest_ind, ranksums
 import pandas as pd
 import joblib
 from matplotlib import pyplot as plt
@@ -25,7 +27,6 @@ from sklearn.model_selection import ShuffleSplit, GridSearchCV
 
 from metrica.metrics_map import testability_metrics
 
-import scipy.stats
 
 def regress_with_decision_tree(model_path):
     xls = pd.ExcelFile(
@@ -145,31 +146,36 @@ def compare_source_code_metrics_before_and_after_refactoring():
 
     df3 = df2.melt(id_vars=['Project', 'Stage'], var_name='Metric', value_name='Value')
 
-    g = sns.catplot(data=df3,
-                    x='Project', y='Value', hue='Stage', col='Metric',
-                    col_wrap=5,
-                    kind='box',
-                    sharex=True, sharey=False, margin_titles=True,
-                    height=2.075, aspect=1.25, orient='v',
-                    legend_out=False, legend=False, dodge=True)
+    g = sns.catplot(
+        data=df3,
+        x='Project', y='Value', hue='Stage', col='Metric',
+        col_wrap=4,
+        kind='box',
+        sharex=True, sharey=False, margin_titles=True,
+        height=2.75, aspect=1.25, orient='v',
+        palette=reversed(sns.color_palette('tab10', n_colors=2)),
+        legend_out=False, legend=False, dodge=True
+    )
 
-    g2 = sns.catplot(data=df3,
-                     x='Stage', y='Value', hue='Project', col='Metric',
-                     col_wrap=5,
-                     kind='point',
-                     sharex=True, sharey=False, margin_titles=True,
-                     height=2.15, aspect=1.35, orient='v',
-                     legend_out=False, legend=False, dodge=True,
-                     # axes=g.axes
-                     palette=reversed(sns.color_palette('tab10', n_colors=3)),
-                     markers=['*', 'o', 'X'], linestyles=['dotted', 'dashed', '-.']
-                     )
+    g2 = sns.catplot(
+        data=df3,
+        x='Project', y='Value', hue='Stage', col='Metric',
+        col_wrap=4,
+        kind='point',
+        sharex=True, sharey=False, margin_titles=True,
+        height=3.75, aspect=1.25, orient='v',
+        legend_out=False, legend=False, dodge=True,
+        # axes=g.axes
+        palette=reversed(sns.color_palette('tab10', n_colors=2)),
+        markers=['o', '*', 'X'], linestyles=['dotted', 'dashed', '-.']
+    )
     # g.set(yscale="log")
     g.despine(left=True)
     g2.despine(left=True)
     g.axes[19].legend(loc='upper center')
     g2.axes[19].legend(loc='upper center')
     plt.tight_layout()
+    # plt.savefig('suorce_code_metrics_before_and_after_refactor5.png')
     plt.show()
 
 
@@ -225,10 +231,28 @@ def compute_test_effectiveness():
     xls = pd.ExcelFile(experiments_path + r'tsdd.xlsx')
     # df_gt = pd.read_excel(xls, 'binary_for_learning')
     df = pd.read_excel(xls, 'test_effectiveness')
+    projects = ['Weka', 'Scijava-common', 'Free-mind', 'All']
+    criteria = ['Statement coverage', 'Branch coverage', 'Mutation coverage', 'Test effectiveness']
 
-    df2 = df.loc[(df['Project'] == 'Weka') & (df['Stage'] == 'Before refactoring')]
-    df3 = df.loc[(df['Project'] == 'Weka') & (df['Stage'] == 'After refactoring')]
-    print(df3['Mutation coverage'].mean() - df2['Mutation coverage'].mean())
+    for project_ in projects:
+        for criterion_ in criteria:
+            if project_ != 'All':
+                df2 = df.loc[(df['Project'] == project_) & (df['Stage'] == 'Before refactoring')]
+                df3 = df.loc[(df['Project'] == project_) & (df['Stage'] == 'After refactoring')]
+            else:
+                df2 = df.loc[(df['Stage'] == 'Before refactoring')]
+                df3 = df.loc[(df['Stage'] == 'After refactoring')]
+            # print(df3[criterion_].mean() - df2[criterion_].mean())
+
+            # s, p = ttest_ind(df2[criterion_].values, df3[criterion_].values, alternative="less")
+
+            # Wilcoxon rank-sum test
+            s, p = ranksums(df2[criterion_].values, df3[criterion_].values, alternative="less")
+
+            print(f'project: "{project_}"\t'
+                  f'criterion: "{criterion_}"\t'
+                  f's={s}, p={p:.4E}',
+                  'Passed' if p < 0.05 / 16 else 'Failed')
 
     # Result:
     # (Weka: 0.15692766596007457 + Scijava-common: 0.3277139182660322 + Free-mind: 0.07963432209427038)
@@ -238,23 +262,23 @@ def draw_qmood():
     experiments_path = r'D:/Users/Morteza/OneDrive/Online2/_04_2o/o2_university/PhD/Project21/a155_TsDD/experimental_results/'
     xls = pd.ExcelFile(experiments_path + r'quality_metrics.xlsx')
     df = pd.read_excel(xls, 'qmood-seaborn')
-    df.drop(columns=['Flexibility', 'Understandability',], inplace=True)
-    df2 = df.melt(id_vars=['Project',], var_name='Quality attribute', value_name='Improvement')
+    df.drop(columns=['Flexibility', 'Understandability', ], inplace=True)
+    df2 = df.melt(id_vars=['Project', ], var_name='Quality attribute', value_name='Improvement')
 
     g = sns.catplot(data=df2,
-                     x='Project', y='Improvement', col='Quality attribute',
-                     kind='bar',
-                     sharex=True, sharey=False, margin_titles=True,
-                     height=3, aspect=1.10, orient='v',
-                     legend_out=False, legend=True, dodge=True,
-                     palette=sns.color_palette('tab10', n_colors=3),
-                     )
+                    x='Project', y='Improvement', col='Quality attribute',
+                    kind='bar',
+                    sharex=True, sharey=False, margin_titles=True,
+                    height=3, aspect=1.10, orient='v',
+                    legend_out=False, legend=True, dodge=True,
+                    palette=sns.color_palette('tab10', n_colors=3),
+                    )
     # Define some hatches
-    hatches = ['/', '\\', '//',]
+    hatches = ['/', '\\', '//', ]
 
     # Loop over the bars
     for j in range(0, 5):
-        for i, thisbar in enumerate(g.axes[0,j].patches):
+        for i, thisbar in enumerate(g.axes[0, j].patches):
             # Set a different hatch for each bar
             thisbar.set_hatch(hatches[i])
             thisbar.set_width(0.35)
@@ -277,20 +301,20 @@ def merge_evosuite_reports(root_dir=r'E:/LSSDS/EvoSuite/TsDD_EvoSuite_Expr_JSON2
 
     df = pd.DataFrame()
     for csv_path in execution_reports:
-        df1 = pd.read_csv(csv_path,)
+        df1 = pd.read_csv(csv_path, )
         df = df.append(df1, ignore_index=True)
 
-    df.to_csv(root_dir+'all_reports_JSON.csv', index=False)
+    df.to_csv(root_dir + 'all_reports_JSON.csv', index=False)
 
 
 def visual_evosuite_reports(root_dir=r'E:/LSSDS/EvoSuite/TsDD_EvoSuite_Expr_JSON20201115/'):
-    df = pd.read_csv(root_dir+'all_reports_JSON.csv')
+    df = pd.read_csv(root_dir + 'all_reports_JSON.csv')
 
     df = df[['TARGET_CLASS', 'ctg_time_per_class', 'LineCoverage', 'BranchCoverage', 'WeakMutationScore']]
     df.rename(columns={'ctg_time_per_class': 'Test time per class (minute)'}, inplace=True)
 
     print(df)
-    df = df.melt(id_vars=['TARGET_CLASS', 'Test time per class (minute)'], var_name='Criteria', value_name='Level' )
+    df = df.melt(id_vars=['TARGET_CLASS', 'Test time per class (minute)'], var_name='Criteria', value_name='Level')
 
     sns.lineplot(data=df, x='Test time per class (minute)', y='Level',
                  hue='Criteria', style='Criteria',
@@ -305,7 +329,7 @@ def visual_evosuite_reports(root_dir=r'E:/LSSDS/EvoSuite/TsDD_EvoSuite_Expr_JSON
 # compare_source_code_metrics_before_and_after_refactoring()
 # compare_test_effectiveness_before_and_after_refactoring()
 # refactoring_importance()
-# compute_test_effectiveness()
+compute_test_effectiveness()
 # draw_qmood()
 # merge_evosuite_reports()
-visual_evosuite_reports()
+# visual_evosuite_reports()
