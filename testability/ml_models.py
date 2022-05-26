@@ -338,7 +338,7 @@ class Regression(object):
         elif model_number == 7:
             regressor = NuSVR(cache_size=500, max_iter=- 1, shrinking=True)
             parameters = {
-                'kernel': ['linear', 'rbf', 'poly', 'sigmoid',],
+                'kernel': ['linear', 'rbf', 'poly', 'sigmoid', ],
                 'degree': [3, ],
                 'nu': [0.5, ],
                 'C': [1.0, ]
@@ -470,6 +470,7 @@ def inference():
 
     date_time = dt.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
     print('End datetime {0}'.format(date_time))
+
 
 def compute_benchmark_projects_testability(root_dir_path=None):
     files = [f for f in os.listdir(root_dir_path) if os.path.isfile(os.path.join(root_dir_path, f))]

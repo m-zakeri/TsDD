@@ -242,17 +242,25 @@ def compute_test_effectiveness():
             else:
                 df2 = df.loc[(df['Stage'] == 'Before refactoring')]
                 df3 = df.loc[(df['Stage'] == 'After refactoring')]
-            # print(df3[criterion_].mean() - df2[criterion_].mean())
+
+            absolute_improvement = round(df3[criterion_].mean() - df2[criterion_].mean(), 4)
+            relative_improvement = round(
+                ((df3[criterion_].mean() - df2[criterion_].mean()) / df2[criterion_].mean()) * 100, 2
+            )
+
+            # print(project_, criterion_, absolute_improvement, relative_improvement)
 
             # s, p = ttest_ind(df2[criterion_].values, df3[criterion_].values, alternative="less")
-
             # Wilcoxon rank-sum test
             s, p = ranksums(df2[criterion_].values, df3[criterion_].values, alternative="less")
 
             print(f'project: "{project_}"\t'
                   f'criterion: "{criterion_}"\t'
+                  f'absolute improvement: {absolute_improvement}\t'
+                  f'relative improvement: {relative_improvement}%\t'
                   f's={s}, p={p:.4E}',
                   'Passed' if p < 0.05 / 16 else 'Failed')
+        print()
 
     # Result:
     # (Weka: 0.15692766596007457 + Scijava-common: 0.3277139182660322 + Free-mind: 0.07963432209427038)
