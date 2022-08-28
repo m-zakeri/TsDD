@@ -19,7 +19,6 @@ patch_sklearn()
 
 import pandas as pd
 import joblib
-from matplotlib import pyplot as plt
 
 from sklearn import preprocessing
 from sklearn.model_selection import train_test_split, ShuffleSplit, GridSearchCV
@@ -29,12 +28,12 @@ from sklearn.ensemble import VotingRegressor, RandomForestRegressor, GradientBoo
     HistGradientBoostingRegressor
 from sklearn.linear_model import SGDRegressor
 from sklearn.neural_network import MLPRegressor
-from sklearn.tree import DecisionTreeRegressor, plot_tree
+from sklearn.tree import DecisionTreeRegressor
 from sklearn.svm import NuSVR
 from sklearn.metrics import r2_score, explained_variance_score, mean_absolute_error, mean_squared_error, \
     median_absolute_error, mean_squared_log_error, mean_poisson_deviance, max_error, mean_gamma_deviance
 
-from metrica.metrics_map import testability_metrics
+from tsdd.metrica.metrics_map import testability_metrics
 
 
 class Dataset:
@@ -43,7 +42,7 @@ class Dataset:
 
     def add_evosuite_information(self, root_dir_path=r'../benchmark/SF110/dataset/'):
 
-        df_evosuite = pd.read_csv('../benchmark/SF110/dataset_final/evosuit160_sf110_result_html_with_project.csv',
+        df_evosuite = pd.read_csv('../../benchmark/SF110/dataset_final/evosuit160_sf110_result_html_with_project.csv',
                                   delimiter=',', index_col=False)
         classes_names = list(df_evosuite['Class'].values)
 
@@ -128,7 +127,7 @@ class Dataset:
         # return testability_value
 
     def clean_data(self):
-        df = pd.read_csv('../benchmark/SF110/dataset_final/all_with_label4.csv',
+        df = pd.read_csv('../../benchmark/SF110/dataset_final/all_with_label4.csv',
                          delimiter=',', index_col=False)
         counter = 0
         counter2 = 0
@@ -437,7 +436,7 @@ class Regression(object):
 
 
 def train():
-    ds_path = r'../benchmark/SF110/dataset_final/all_with_label_cleaned4.csv'
+    ds_path = r'../../benchmark/SF110/dataset_final/all_with_label_cleaned4.csv'
     reg = Regression(df_path=ds_path)
 
     reg.regress(model_path=r'models_profiles1/DTR1_DS1.joblib', model_number=1)
@@ -454,13 +453,13 @@ def inference():
     date_time = dt.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
     print('Start datetime {0}'.format(date_time))
 
-    dataset_path = r'../benchmark/SF110/dataset_final/all_with_label_cleaned4.csv'
+    dataset_path = r'../../benchmark/SF110/dataset_final/all_with_label_cleaned4.csv'
     model_path = r'models_profiles1/VoR1_DS1.joblib'
 
     # data_path = r'../benchmark/SF110/dataset/10_water-simulator-Class.csv'
     # data_path = r'../benchmark/SF110/dataset/107_weka-Class.csv'
     # data_path = r'../benchmark/SF110/dataset/32_httpanalyzer-Class.csv'
-    data_path = r'../benchmark/SF110/data_to_inference/10_water-simulator-after-refactor3-Class.csv'
+    data_path = r'../../benchmark/SF110/data_to_inference/10_water-simulator-after-refactor3-Class.csv'
 
     reg = Regression(df_path=dataset_path)
     project_testability = reg.inference_model(model_path=model_path, features_path=data_path)

@@ -6,12 +6,11 @@ TsDD paper.
 __version__ = '0.1.0'
 __author__ = 'Morteza Zakeri'
 
-import sys
 import os
 
 import numpy as np
 import scipy.stats
-from scipy.stats import ttest_ind, ranksums
+from scipy.stats import ranksums
 import pandas as pd
 import joblib
 from matplotlib import pyplot as plt
@@ -20,12 +19,11 @@ import seaborn as sns
 from sklearn import preprocessing
 from sklearn import tree
 from sklearn.tree import plot_tree
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.model_selection import ShuffleSplit, GridSearchCV
+from sklearn.model_selection import ShuffleSplit
 
 # from yellowbrick.model_selection import FeatureImportances
 
-from metrica.metrics_map import testability_metrics
+from tsdd.metrica.metrics_map import testability_metrics
 
 
 def regress_with_decision_tree(model_path):

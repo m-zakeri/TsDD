@@ -1,0 +1,2 @@
+best_parameters_development_set,best_score_development_set,best_score_test_set:
+"{'criterion': 'mse', 'max_depth': 9, 'min_samples_split': 28}",-0.21184865107411782,-0.20982197876833322
