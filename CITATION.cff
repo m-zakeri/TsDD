@@ -1,0 +1,17 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Zakeri-Nasrabadi"
+  given-names: "Morteza"
+  orcid: "https://orcid.org/0000-0003-4289-0606"
+- family-names: "Parsa"
+  given-names: "Saeed"
+- family-names: "Wiem Mkaouer"
+  given-names: "Mohamed"
+- family-names: "Turhan"
+  given-names: "Burak"
+title: "Testability-Driven Development (TsDD): An Improvement to the TDD Efficiency"
+version: 0.2.0
+doi: https://doi.org/10.5281/zenodo.7916398
+date-released: 2023-05-09
+url: "https://m-zakeri.github.io/TsDD"
