@@ -1,0 +1,2 @@
+best_parameters_development_set,best_score_development_set,best_score_test_set:
+"{'C': 1.0, 'degree': 3, 'kernel': 'rbf', 'nu': 0.5}",-0.2088030263408644,-0.21032099443730465

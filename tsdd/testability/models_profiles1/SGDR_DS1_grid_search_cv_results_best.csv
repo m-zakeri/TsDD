@@ -1,0 +1,2 @@
+best_parameters_development_set,best_score_development_set,best_score_test_set:
+"{'average': 32, 'eta0': 0.001, 'learning_rate': 'adaptive', 'loss': 'huber', 'max_iter': 50, 'penalty': 'elasticnet'}",-0.25312501255119835,-0.24596781411504867

@@ -1,0 +1,2 @@
+best_parameters_development_set,best_score_development_set,best_score_test_set:
+"{'activation': 'tanh', 'hidden_layer_sizes': (256, 100), 'max_iter': 100, 'solver': 'adam'}",-0.19232984342435663,-0.19527720835348866
