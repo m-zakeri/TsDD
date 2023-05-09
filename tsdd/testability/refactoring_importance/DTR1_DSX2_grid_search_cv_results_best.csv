@@ -1,0 +1,2 @@
+best_parameters_development_set,best_score_development_set
+"{'criterion': 'friedman_mse', 'max_depth': 85, 'min_samples_split': 3}",-0.13912037863185284
