@@ -1,2 +1,0 @@
-best_parameters_development_set,best_score_development_set,best_score_test_set:
-"{'max_depth': 8, 'min_samples_split': 24}",-0.18603527302355433,-0.18300039428464368
