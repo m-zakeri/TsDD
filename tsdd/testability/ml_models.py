@@ -13,9 +13,9 @@ import os
 import ntpath
 import datetime as dt
 import math
-from sklearnex import patch_sklearn
+# from sklearnex import patch_sklearn
 
-patch_sklearn()
+# patch_sklearn()
 
 import pandas as pd
 import joblib
@@ -23,16 +23,17 @@ import joblib
 from sklearn import preprocessing
 from sklearn.model_selection import train_test_split, ShuffleSplit, GridSearchCV
 
-from sklearn.experimental import enable_hist_gradient_boosting  # noqa
-from sklearn.ensemble import VotingRegressor, RandomForestRegressor, GradientBoostingRegressor, \
-    HistGradientBoostingRegressor
+# from sklearn.experimental import enable_hist_gradient_boosting  # noqa
+from sklearn.ensemble import (RandomForestRegressor, GradientBoostingRegressor, HistGradientBoostingRegressor,
+                              VotingRegressor, )
 from sklearn.linear_model import SGDRegressor
 from sklearn.neural_network import MLPRegressor
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.svm import NuSVR
-from sklearn.metrics import r2_score, explained_variance_score, mean_absolute_error, mean_squared_error, \
-    median_absolute_error, mean_squared_log_error, mean_poisson_deviance, max_error, mean_gamma_deviance
-
+from sklearn.metrics import (r2_score, explained_variance_score, mean_absolute_error, mean_squared_error,
+                             median_absolute_error, mean_squared_log_error, mean_poisson_deviance, max_error,
+                             mean_gamma_deviance)
+from sklearn.feature_selection import SelectKBest, f_regression
 from tsdd.metrica.metrics_map import testability_metrics
 
 
@@ -150,41 +151,40 @@ class Dataset:
         df.to_csv(r'../benchmark/SF110/dataset_final/all_with_label_cleaned4.csv', index=False)
 
 
-class Regression(object):
-    def __init__(self, df_path=None, ):
+class Regression:
+    def __init__(self, df_path=None, enable_feature_selection=False):
         self.df = pd.read_csv(df_path, delimiter=',', index_col=False)
 
         cols = []
         for i, metric_name_ in enumerate(testability_metrics):
             cols.append(testability_metrics[metric_name_][0])
 
-        self.X_train1, self.X_test1, self.y_train, self.y_test = train_test_split(self.df[cols],
-                                                                                  # self.df.iloc[:, -2],
-                                                                                  self.df['TsDDTestability'],
-                                                                                  test_size=0.20,
-                                                                                  random_state=13,
-                                                                                  )
+        self.X_train1, self.X_test1, self.y_train, self.y_test = train_test_split(
+            self.df[cols],
+            # self.df.iloc[:, -2],
+            self.df['TsDDTestability'],
+            test_size=0.20,
+            random_state=13,
+        )
 
-        """
-        # ---------------------------------------
         # -- Feature selection (For DS2)
-        selector = feature_selection.SelectKBest(feature_selection.f_regression, k=15)
-        # clf = linear_model.LassoCV(eps=1e-3, n_alphas=100, normalize=True, max_iter=5000, tol=1e-4)
-        # clf.fit(self.X_train1, self.y_train)
-        # importance = np.abs(clf.coef_)
-        # print('importance', importance)
-        # clf = RandomForestRegressor()
-        # selector = feature_selection.SelectFromModel(clf, prefit=False, norm_order=2, max_features=20, threshold=None)
-        selector.fit(self.X_train1, self.y_train)
+        if enable_feature_selection:
+            selector = SelectKBest(f_regression, k=10)
+            # clf = linear_model.LassoCV(eps=1e-3, n_alphas=100, normalize=True, max_iter=5000, tol=1e-4)
+            # clf.fit(self.X_train1, self.y_train)
+            # importance = np.abs(clf.coef_)
+            # print('importance', importance)
+            # clf = RandomForestRegressor()
+            # selector = feature_selection.SelectFromModel(clf, prefit=False, norm_order=2, max_features=20, threshold=None)
+            selector.fit(self.X_train1, self.y_train)
 
-        # Get columns to keep and create new dataframe with only selected features
-        cols = selector.get_support(indices=True)
-        self.X_train1 = self.X_train1.iloc[:, cols]
-        self.X_test1 = self.X_test1.iloc[:, cols]
-        print('Selected columns by feature selection:', self.X_train1.columns)
-        # quit()
+            # Get columns to keep and create new dataframe with only selected features
+            cols = selector.get_support(indices=True)
+            self.X_train1 = self.X_train1.iloc[:, cols]
+            self.X_test1 = self.X_test1.iloc[:, cols]
+            print('Selected columns by feature selection:', self.X_train1.columns)
+            # quit()
         # -- End of feature selection
-        """
 
         # ---------------------------------------
         # Standardization
@@ -285,6 +285,8 @@ class Regression(object):
         :param model_number: 1: DTR, 2: RFR, 3: GBR, 4: HGBR, 5: SGDR, 6: MLPR,
         :return:
         """
+        regressor = None
+        parameters = {}
         if model_number == 1:
             regressor = DecisionTreeRegressor(random_state=42, )
             # Set the parameters to be used for tuning by cross-validation
@@ -437,16 +439,16 @@ class Regression(object):
 
 def train():
     ds_path = r'../../benchmark/SF110/dataset_final/all_with_label_cleaned4.csv'
-    reg = Regression(df_path=ds_path)
+    reg = Regression(df_path=ds_path, enable_feature_selection=True)
 
-    reg.regress(model_path=r'models_profiles1/DTR1_DS1.joblib', model_number=1)
-    reg.regress(model_path=r'models_profiles1/RFR1_DS1.joblib', model_number=2)
-    # reg.regress(model_path=r'models_profiles1/GBR1_DS1.joblib', model_number=3)
-    reg.regress(model_path=r'models_profiles1/HGBR1_DS1.joblib', model_number=4)
-    reg.regress(model_path=r'models_profiles1/SGDR_DS1.joblib', model_number=5)
-    reg.regress(model_path=r'models_profiles1/MLPR1_DS1.joblib', model_number=6)
-    reg.regress(model_path=r'models_profiles1/NuSVR1_DS1.joblib', model_number=7)
-    reg.vote(model_path=r'models_profiles1/VoR1_DS1.joblib', dataset_number=1)
+    reg.regress(model_path=r'models_profiles1/DTR1_DS2.joblib', model_number=1)
+    reg.regress(model_path=r'models_profiles1/RFR1_DS2.joblib', model_number=2)
+    # reg.regress(model_path=r'models_profiles1/GBR1_DS2.joblib', model_number=3)
+    reg.regress(model_path=r'models_profiles1/HGBR1_DS2.joblib', model_number=4)
+    reg.regress(model_path=r'models_profiles1/SGDR_DS2.joblib', model_number=5)
+    reg.regress(model_path=r'models_profiles1/MLPR1_DS2.joblib', model_number=6)
+    reg.regress(model_path=r'models_profiles1/NuSVR1_DS2.joblib', model_number=7)
+    reg.vote(model_path=r'models_profiles1/VoR1_DS2.joblib', dataset_number=1)
 
 
 def inference():
@@ -500,12 +502,14 @@ def compute_benchmark_projects_testability(root_dir_path=None):
 
 # Main Driver
 if __name__ == '__main__':
+    print('from ML module')
     # ds = Dataset()
     # ds.add_evosuite_information()
     # ds.concatenate_csv_files()
     # ds.clean_data()
-    # train()
+    train()
     # Dataset.compute_testability(lc=0.287671232876712, br=0.236051502145922, mu=0.175496688741721, taw=37, TNM=54)
 
     # compute_benchmark_projects_testability(root_dir_path=r'../benchmark/SF110/dataset2/')
-    inference()  # with demo project for example
+    # with demo project for example
+    # inference()

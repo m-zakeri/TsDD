@@ -87,5 +87,7 @@ testability_metrics = {
 
 }
 
+
 # Test driver
-# print(reusability_metrics['Total Number of Public Methods'][1])
+print(reusability_metrics['Total Number of Public Methods'][1])
+print(len(testability_metrics))

@@ -321,21 +321,48 @@ def visual_evosuite_reports(root_dir=r'E:/LSSDS/EvoSuite/TsDD_EvoSuite_Expr_JSON
 
     print(df)
     df = df.melt(id_vars=['TARGET_CLASS', 'Test time per class (minute)'], var_name='Criteria', value_name='Level')
+    sns.set(font_scale=1.15)  # crazy big
 
-    sns.lineplot(data=df, x='Test time per class (minute)', y='Level',
-                 hue='Criteria', style='Criteria',
-                 markers=True, estimator=np.nanmean, n_boot=10, sort=True,
-                 )
+    g = sns.lineplot(
+        data=df, x='Test time per class (minute)', y='Level',
+        hue='Criteria', style='Criteria', linewidth=5,
+        markers=True, estimator=np.nanmean, n_boot=1000, sort=True,
+    )
+
+    # Set label for x-axis
+    g.set_xlabel('Test time per class (minute)', size=14)
+
+    # Set label for y-axis
+    g.set_ylabel('Value of criterion', size=14)
 
     plt.tight_layout()
     plt.show()
 
 
-# regress_with_decision_tree(model_path=r'refactoring_importance/DTR2_DSX2.joblib')
-# compare_source_code_metrics_before_and_after_refactoring()
-# compare_test_effectiveness_before_and_after_refactoring()
-# refactoring_importance()
-compute_test_effectiveness()
-# draw_qmood()
-# merge_evosuite_reports()
-# visual_evosuite_reports()
+def test():
+    from sklearn.preprocessing import OneHotEncoder
+    import numpy as np
+
+    # Create a sample dataset
+    data = pd.DataFrame([['cat',],['bird']])
+
+    # Create the OneHotEncoder object with sparse_output=False
+    encoder = OneHotEncoder(sparse=True)
+
+    # Fit and transform the data
+    one_hot_encoded = encoder.fit_transform(data)
+
+    # Print the encoded data
+    print(one_hot_encoded)
+
+
+if __name__ == '__main__':
+    # regress_with_decision_tree(model_path=r'refactoring_importance/DTR2_DSX2.joblib')
+    # compare_source_code_metrics_before_and_after_refactoring()
+    # compare_test_effectiveness_before_and_after_refactoring()
+    # refactoring_importance()
+    # compute_test_effectiveness()
+    # draw_qmood()
+    # merge_evosuite_reports()
+    # visual_evosuite_reports()
+    test()
