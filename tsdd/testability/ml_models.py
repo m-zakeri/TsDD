@@ -13,23 +13,27 @@ import os
 import ntpath
 import datetime as dt
 import math
+
+import numpy as np
 # from sklearnex import patch_sklearn
 
 # patch_sklearn()
 
 import pandas as pd
 import joblib
+from scipy import stats
 
 from sklearn import preprocessing
-from sklearn.model_selection import train_test_split, ShuffleSplit, GridSearchCV
+from sklearn.datasets import load_iris
+from sklearn.model_selection import train_test_split, ShuffleSplit, GridSearchCV, cross_val_score
 
 # from sklearn.experimental import enable_hist_gradient_boosting  # noqa
 from sklearn.ensemble import (RandomForestRegressor, GradientBoostingRegressor, HistGradientBoostingRegressor,
-                              VotingRegressor, )
+                              VotingRegressor, RandomForestClassifier, )
 from sklearn.linear_model import SGDRegressor
 from sklearn.neural_network import MLPRegressor
 from sklearn.tree import DecisionTreeRegressor
-from sklearn.svm import NuSVR
+from sklearn.svm import NuSVR, SVC
 from sklearn.metrics import (r2_score, explained_variance_score, mean_absolute_error, mean_squared_error,
                              median_absolute_error, mean_squared_log_error, mean_poisson_deviance, max_error,
                              mean_gamma_deviance)
@@ -441,14 +445,14 @@ def train():
     ds_path = r'../../benchmark/SF110/dataset_final/all_with_label_cleaned4.csv'
     reg = Regression(df_path=ds_path, enable_feature_selection=True)
 
-    reg.regress(model_path=r'models_profiles1/DTR1_DS2.joblib', model_number=1)
-    reg.regress(model_path=r'models_profiles1/RFR1_DS2.joblib', model_number=2)
+    # reg.regress(model_path=r'models_profiles1/DTR1_DS2.joblib', model_number=1)
+    # reg.regress(model_path=r'models_profiles1/RFR1_DS2.joblib', model_number=2)
     # reg.regress(model_path=r'models_profiles1/GBR1_DS2.joblib', model_number=3)
-    reg.regress(model_path=r'models_profiles1/HGBR1_DS2.joblib', model_number=4)
-    reg.regress(model_path=r'models_profiles1/SGDR_DS2.joblib', model_number=5)
-    reg.regress(model_path=r'models_profiles1/MLPR1_DS2.joblib', model_number=6)
-    reg.regress(model_path=r'models_profiles1/NuSVR1_DS2.joblib', model_number=7)
-    reg.vote(model_path=r'models_profiles1/VoR1_DS2.joblib', dataset_number=1)
+    # reg.regress(model_path=r'models_profiles1/HGBR1_DS2.joblib', model_number=4)
+    # reg.regress(model_path=r'models_profiles1/SGDR_DS2.joblib', model_number=5)
+    # reg.regress(model_path=r'models_profiles1/MLPR1_DS2.joblib', model_number=6)
+    # reg.regress(model_path=r'models_profiles1/NuSVR1_DS2.joblib', model_number=7)
+    reg.vote(model_path=r'models_profiles1/VoR1_DS2.joblib', dataset_number=2)
 
 
 def inference():
@@ -500,6 +504,65 @@ def compute_benchmark_projects_testability(root_dir_path=None):
     df.to_csv('./benchmark_projects_testability.csv', index=False)
 
 
+class ModelComparer:
+    def __init__(self, model1, model2, data, target):
+        self.model1 = model1
+        self.model2 = model2
+        self.X = data
+        self.y = target
+
+    def cross_validate(self, cv=5):
+        self.scores_model1 = cross_val_score(self.model1, self.X, self.y, cv=cv)
+        self.scores_model2 = cross_val_score(self.model2, self.X, self.y, cv=cv)
+
+    def compare_models(self, alpha=0.05):
+        t_statistic, p_value = stats.ttest_rel(self.scores_model1, self.scores_model2)
+
+        print(f"Model 1 Mean Accuracy: {np.mean(self.scores_model1):.3f}")
+        print(f"Model 2 Mean Accuracy: {np.mean(self.scores_model2):.3f}")
+        print(f"T-statistic: {t_statistic:.3f}, P-value: {p_value:.3f}")
+
+        if p_value <= alpha:
+            print("There is a significant difference between the two models.")
+        else:
+            print("There is no significant difference between the two models.")
+
+    @classmethod
+    def compare_models2(cls, alpha=0.05):
+        dir_ = 'S:/TsDD2/tsdd/testability/models_profiles1/'
+        model1 = 'SGDR_DS1_grid_search_cv_results.csv'
+        model2 = 'SGDR_DS2_grid_search_cv_results.csv'
+        df1 = pd.read_csv(os.path.join(dir_, model1))
+        df2 = pd.read_csv(os.path.join(dir_, model2))
+
+        rmse_model1 = df1['mean_test_neg_root_mean_squared_error'] * -1
+        rmse_model2 = df2['mean_test_neg_root_mean_squared_error'] * -1
+        t_statistic, p_value = stats.ttest_rel(rmse_model1, rmse_model2)
+
+        print(f"Model 1 CV RMSE: {np.mean(rmse_model1):.3f}")
+        print(f"Model 2 CV RMSE: {np.mean(rmse_model2):.3f}")
+        print(f"T-statistic: {t_statistic:.3f}, P-value: {p_value}")
+
+        if p_value <= alpha:
+            print("There is a significant difference between the two models.")
+        else:
+            print("There is no significant difference between the two models.")
+
+
+def compare_models():
+    # Usage
+    # data = load_iris()
+    # X, y = data.data, data.target
+    #
+    # model1 = RandomForestClassifier()
+    # model2 = SVC()
+    #
+    # comparer = ModelComparer(model1, model2, X, y)
+    # comparer.cross_validate(cv=5)
+    # comparer.compare_models(alpha=0.05)
+    ModelComparer.compare_models2()
+
+
 # Main Driver
 if __name__ == '__main__':
     print('from ML module')
@@ -513,3 +576,4 @@ if __name__ == '__main__':
     # compute_benchmark_projects_testability(root_dir_path=r'../benchmark/SF110/dataset2/')
     # with demo project for example
     # inference()
+    # compare_models()
